@@ -22,3 +22,22 @@ async function httpGetRaw(urlStr) {
   for await (const chunk of socket) data += chunk.toString('utf8');
   return data.split('\r\n\r\n')[1]; 
 }
+const net = require('net');
+const tls = require('tls');
+
+async function httpGetRaw(urlStr) {
+  const u = new URL(urlStr);
+  const isHttps = u.protocol === 'https:';
+  const port = u.port || (isHttps ? 443 : 80);
+
+  const socket = isHttps
+    ? tls.connect(port, u.hostname, { servername: u.hostname })
+    : net.createConnection(port, u.hostname);
+
+  const req = `GET ${u.pathname || '/'} HTTP/1.1\r\nHost: ${u.hostname}\r\nConnection: close\r\n\r\n`;
+  socket.write(req);
+
+  let data = '';
+  for await (const chunk of socket) data += chunk.toString('utf8');
+  return data.split('\r\n\r\n')[1]; // тело без заголовков
+}
