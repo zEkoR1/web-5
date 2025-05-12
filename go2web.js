@@ -178,24 +178,18 @@ function stripHTML(html) {
 }
 
 async function doSearch(term) {
-  const searchURL = `https://duckduckgo.com/html/?q=${encodeURIComponent(term)}`;
-  const html = await rawRequest(searchURL);
-  const results = [];
-  const regex = /<a[^>]+class="result__a"[^>]+href="([^">]+)"[^>]*>([\s\S]*?)<\/a>/gi;
-  let m;
-  while ((m = regex.exec(html)) && results.length < 10) {
-    const url = m[1];
-    const title = stripHTML(m[2]);
-    results.push({ title, url });
+    const url   = `https://duckduckgo.com/html/?q=${encodeURIComponent(term)}`;
+    const html  = await rawRequest(url, 0, true);        // preserve HTML
+    const re    = /<a[^>]+class="result__a"[^>]+href="([^">]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+    const res   = [];
+    let m;
+    while ((m = re.exec(html)) && res.length < 10) {
+      res.push({ url: m[1], title: stripHTML(m[2]) });
+    }
+    if (!res.length) return console.log('No results found');
+    res.forEach((r, i) => console.log(`${i + 1}. ${r.title}\n   ${r.url}\n`));
   }
-  if (results.length === 0) {
-    console.log('No results found');
-    return;
-  }
-  results.forEach((r, i) => {
-    console.log(`${i + 1}. ${r.title}\n   ${r.url}\n`);
-  });
-}
+  
 
 async function doFetch(url) {
   try {
